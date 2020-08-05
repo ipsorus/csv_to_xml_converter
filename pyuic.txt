@@ -1,0 +1,2 @@
+pyuic5 csv_to_xml.ui -o csv_to_xml.py
+
