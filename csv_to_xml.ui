@@ -26,7 +26,7 @@
    <string>Конвертер CSV в XML</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="res.qrc">
+   <iconset resource="мои проги/csv_to_xml/res.qrc">
     <normaloff>:/icons/XML-01.ico</normaloff>:/icons/XML-01.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -144,50 +144,6 @@
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>250</x>
-      <y>40</y>
-      <width>271</width>
-      <height>171</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="pixmap">
-     <pixmap resource="res.qrc">:/icons/vniims_logo.jpg</pixmap>
-    </property>
-    <property name="scaledContents">
-     <bool>false</bool>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignJustify|Qt::AlignVCenter</set>
-    </property>
-    <property name="wordWrap">
-     <bool>false</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>-14</x>
-      <y>-60</y>
-      <width>791</width>
-      <height>361</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: white;</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
@@ -248,34 +204,6 @@
      <string>Не более 5000 записей</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_6">
-    <property name="geometry">
-     <rect>
-      <x>256</x>
-      <y>220</y>
-      <width>261</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Версия ПО 1.0</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <zorder>lineEdit</zorder>
-   <zorder>pushButton</zorder>
-   <zorder>pushButton_2</zorder>
-   <zorder>lineEdit_2</zorder>
-   <zorder>pushButton_3</zorder>
-   <zorder>progressBar</zorder>
-   <zorder>label_4</zorder>
-   <zorder>spinBox</zorder>
-   <zorder>label_5</zorder>
-   <zorder>label_2</zorder>
-   <zorder>label</zorder>
-   <zorder>label_6</zorder>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menuBar">
@@ -309,7 +237,7 @@
   </action>
  </widget>
  <resources>
-  <include location="res.qrc"/>
+  <include location="мои проги/csv_to_xml/res.qrc"/>
  </resources>
  <connections/>
 </ui>

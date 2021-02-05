@@ -1,8 +1,11 @@
 # Владелец интеллектуальной собственности и разработчик данного программного обеспечения: Лошкарев Вадим Игоревич
 
+#Указатель версии ПО (для заставки и раздела Информация)
+version = "Версия программы: 2.0"
+
 import csv
 from datetime import datetime, date, time, timedelta
-import random
+#import random
 import os
 import errno
 import res_rc
@@ -10,9 +13,8 @@ import sys
 
 import csv_to_xml  #модуль главного окна PyQt
 
-from PyQt5.QtCore import pyqtSignal, Qt, QDate, QDateTime, QTimer
+from PyQt5.QtCore import Qt, QDate, QDateTime, QTimer
 from PyQt5.QtWidgets import QMainWindow, QWidget, QFileDialog, QToolTip, QPushButton, QApplication, QMessageBox, QAction
-from PyQt5.QtGui import *
 from PyQt5 import QtGui
 from PyQt5.QtGui import QColor, QPalette
 
@@ -25,11 +27,7 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
         super(main_window, self).__init__()
         self.setupUi(self)
 
-        self.menuBar.setVisible(False)
-        self.setWindowTitle("  ")
-        self.statusTimer()
         self.lineEdit.setPlaceholderText('Выберите CSV-файл')
-
         self.lineEdit_2.setPlaceholderText((f"Путь сохранения по-умолчанию: {os.getcwd()}"))
         self.folder = os.getcwd()
         self.folder_xml = os.getcwd()
@@ -47,26 +45,9 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
         msg = QMessageBox()
         msg.setWindowTitle("Информация")
         msg.setText("Программное обеспечение: Конвертер файлов из формата CSV в формат XML")
-        msg.setInformativeText(f"Разработчик: ФГУП \"ВНИИМС\"\nРаспространяется на безвозмездной основе\nВерсия программы: 1.0")
-        #msg.setDetailedText(f"Распространяется на безвозмездной основе\nВерсия программы: 1.0")
+        msg.setInformativeText(f"Разработчик: ФГУП \"ВНИИМС\"\nРаспространяется на безвозмездной основе\n{version}\n\nТехническая поддержка: fgis2@gost.ru")
         okButton = msg.addButton('Закрыть', QMessageBox.AcceptRole)
-        #msg.addButton('Отмена', QMessageBox.RejectRole)
-        
         msg.exec()
-
-
-    def statusTimer(self):
-        self.timer = QTimer()
-        self.timer.start(5000)
-        self.timer.timeout.connect(self.label_image)
-        self.timer.setSingleShot(True)
-
-    def label_image(self):
-        self.label.setVisible(False)
-        self.label_2.setVisible(False)
-        self.label_6.setVisible(False)
-        self.menuBar.setVisible(True)
-        self.setWindowTitle("Конвертер CSV в XML")
 
     def csv_reader(self, file_obj):
         """
@@ -77,14 +58,11 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
         for row in reader:
             row_1 = (" ".join(row))
             self.data.append(row_1.split(';'))
-
         return self.data
-
 
     def create_dict(self, csv_list):
         for n in range(len(csv_list[0])):
             self.dict[csv_list[0][n]] = csv_list[1][n]
-
         return self.dict
 
     def do_convert(self):
@@ -122,12 +100,22 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                 except (KeyError, PermissionError):
                     self.statusBar().showMessage('Ошибка, неверный формат данных в CSV')
                     error = 'True'
+                except ValueError as exp:
+                    text_1 = exp
+                    print('text_1', text_1)
+                    self.statusBar().showMessage(str(exp))
+                    error = 'True'
             elif TOTAL_RESULTS > RESULTS_IN_APP:
                 try:
                     self.converter(csv_list, file_name, RESULTS_IN_APP, j + 1)
                     TOTAL_RESULTS -= RESULTS_IN_APP
                 except (KeyError, PermissionError):
                     self.statusBar().showMessage('Ошибка, неверный формат данных в CSV')
+                    error = 'True'
+                except ValueError as exp:
+                    text = exp
+                    print('text', text)
+                    self.statusBar().showMessage(str(exp))
                     error = 'True'
 
             set_progress += progress_value
@@ -168,8 +156,9 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
     def converter(self, csv_data, xml_name, result, part):
 
         self.data_for_xml = self.create_dict(csv_data)
-        #Для контроля использую Условный шифр знака поверки, если такого ключа нет в словаре, формат файла не совпадает
+        #Для контроля использую Условный шифр знака поверки, тип поверки и калибровку, если таких ключа нет в словаре, формат файла не совпадает
         signCipher_element = self.data_for_xml["signCipher"].upper()
+        typePov = self.data_for_xml["type"]
 
         if self.folder_xml != self.folder:
             self.folder = self.folder_xml
@@ -183,15 +172,17 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
         #Префикс названия файла
         prefix = f'{xml_name}_'
 
+        date_stamp = datetime.now().strftime("%Y%m%d%H%M")
+
         #Название файла
-        self.name_of_file = f'{prefix}записей_{str(result)}_part_{part}.xml'
+        self.name_of_file = f'{date_stamp}_{prefix}записей_{str(result)}_part_{part}.xml'
 
         FileFullPath = os.path.join(self.path_for_files, self.name_of_file)  #Путь сохранения файла
 
         with open (FileFullPath, 'w', encoding='utf-8') as sample:
 
             header_1 = f'<?xml version="1.0" encoding="utf-8" ?>\n'
-            header_2 = f'<gost:application xmlns:gost="urn://fgis-arshin.gost.ru/module-verifications/import/2020-04-14">\n'
+            header_2 = f'<gost:application xmlns:gost="urn://fgis-arshin.gost.ru/module-verifications/import/2020-06-19">\n'
             header = header_1 + header_2
             sample.write(header)
 
@@ -202,21 +193,40 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                 self.data_for_xml = self.create_dict(csv_data)
 
                 #Условный шифр знака поверки
-                signCipher_element = self.data_for_xml["signCipher"].upper()
+                if self.data_for_xml["signCipher"].upper() != '':
+                    signCipher_element = self.data_for_xml["signCipher"].upper()
+                else:
+                    raise ValueError("Не заполнено поле условный шифр")
 
                 #Модификация СИ и Тип СИ
-                mitypeNumber = self.data_for_xml['mitypeNumber']
-                modification = self.data_for_xml['modification']
+                if self.data_for_xml['mitypeNumber'] != '':
+                    mitypeNumber = self.data_for_xml['mitypeNumber']
+                else:
+                    raise ValueError("Не заполнено поле Тип СИ")
 
+                if self.data_for_xml['modification'] != '':
+                    modification = self.data_for_xml['modification']
+                else:
+                    raise ValueError("Не заполнено поле Модификация")
 
-                manufactureNum = self.data_for_xml['manufactureNum']     #Заводской номер СИ
+                manufactureNum = self.data_for_xml['manufactureNum']         #Заводской номер СИ
+                inventoryNum = self.data_for_xml['inventoryNum']             #Инвентарный номер СИ (Букв-цифр обозн)
                 manufactureYear_csv = self.data_for_xml['manufactureYear']   #Дата производства СИ
 
                 result_start = f'<gost:result>\n'
                 miInfo_start = f'<gost:miInfo>\n'
                 singleMI_start = f'<gost:singleMI>\n'
                 mitypeNumber = f'<gost:mitypeNumber>{mitypeNumber}</gost:mitypeNumber>\n'
-                manufactureNum = f'<gost:manufactureNum>{manufactureNum}</gost:manufactureNum>\n'
+
+                if manufactureNum != '' and inventoryNum == '':
+                    manufactureNum = f'<gost:manufactureNum>{manufactureNum}</gost:manufactureNum>\n'
+                elif manufactureNum == '' and inventoryNum != '':
+                    manufactureNum = f'<gost:inventoryNum>{inventoryNum}</gost:inventoryNum>\n'
+                elif manufactureNum != '' and inventoryNum != '':
+                    raise ValueError("Заполнены два поля Зав. № и БЦО одновременно")
+                elif manufactureNum == '' and inventoryNum == '':
+                    raise ValueError("Не заполнено ни одно поле Зав. № или БЦО")
+
                 manufactureYear = f'<gost:manufactureYear>{manufactureYear_csv}</gost:manufactureYear>\n'
                 modification = f'<gost:modification>{modification}</gost:modification>\n'
                 singleMI_close = f'</gost:singleMI>\n'
@@ -227,61 +237,121 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                 else:
                     miInfo = miInfo_start + singleMI_start + mitypeNumber + manufactureNum + modification + singleMI_close + miInfo_close
 
-                verification_marker = self.data_for_xml['applicable']  # (пригодно, непригодно)
+                if self.data_for_xml['applicable'] != '':
+                    verification_marker = self.data_for_xml['applicable']  # (пригодно, непригодно)
+                else:
+                    raise ValueError("Не заполнено поле Пригодность")
 
                 try:
-                    datePov = self.data_for_xml['vrfDate']
-                    vrfDate = datetime.strptime(datePov, '%d.%m.%Y').date()       #Отформатированная дата поверки
+                    if self.data_for_xml['vrfDate'] != '':
+                        vrfDate = datetime.strptime(self.data_for_xml['vrfDate'], '%d.%m.%Y').date()       #Отформатированная дата поверки
+                    else:
+                        raise ValueError("Не заполнено поле Дата поверки")
 
-                    dateNextPov = self.data_for_xml['validDate']
-                    validDate = datetime.strptime(dateNextPov, '%d.%m.%Y').date() #Отформатированная дата действия поверки
+                    if self.data_for_xml['validDate'] != '':
+                        validDate = datetime.strptime(self.data_for_xml['validDate'], '%d.%m.%Y').date() #Отформатированная дата действия поверки
+                    else:
+                        self.statusBar().showMessage('Не заполнено поле Действительна до (validDate)')
+                        validDate = self.data_for_xml['validDate']
                 except ValueError:
-                    datePov = self.data_for_xml['vrfDate']
-                    vrfDate = datetime.strptime(datePov, '%Y-%m-%d').date()       #Отформатированная дата поверки
+                    if self.data_for_xml['vrfDate'] != '':
+                        vrfDate = datetime.strptime(self.data_for_xml['vrfDate'], '%Y-%m-%d').date()       #Отформатированная дата поверки
+                    else:
+                        raise ValueError("Не заполнено поле Дата поверки")
 
-                    dateNextPov = self.data_for_xml['validDate']
-                    validDate = datetime.strptime(dateNextPov, '%Y-%m-%d').date() #Отформатированная дата действия поверки
-
+                    if self.data_for_xml['validDate'] != '':
+                        validDate = datetime.strptime(self.data_for_xml['validDate'], '%Y-%m-%d').date() #Отформатированная дата действия поверки
+                    else:
+                        self.statusBar().showMessage('Не заполнено поле Действительна до (validDate)')
+                        validDate = self.data_for_xml['validDate']
 
                 if verification_marker.lower() == 'пригодно':
                     signCipher = f'<gost:signCipher>{signCipher_element}</gost:signCipher>\n'
-                    vrfDate = f'<gost:vrfDate>{vrfDate}+03:00</gost:vrfDate>\n'
-                    validDate = f'<gost:validDate>{validDate}+03:00</gost:validDate>\n'
+                    if self.data_for_xml["miOwner"] != '':
+                        miOwner = f'<gost:miOwner>{self.data_for_xml["miOwner"]}</gost:miOwner>\n'
+                    else:
+                        raise ValueError("Не заполнено поле Владелец СИ")
+                    vrfDate = f'<gost:vrfDate>{vrfDate}</gost:vrfDate>\n'
+                    validDate = f'<gost:validDate>{validDate}</gost:validDate>\n'
+                    if self.data_for_xml["type"] != '':
+                        typePov = f'<gost:type>{self.data_for_xml["type"]}</gost:type>\n'
+                    else:
+                        raise ValueError("Не заполнено поле Тип поверки")
+                    if self.data_for_xml['calibration'] != '':
+                        if self.data_for_xml['calibration'].lower() == 'да':
+                            calibrate = 'true'
+                            calibration = f'<gost:calibration>{calibrate}</gost:calibration>\n'
+                        elif self.data_for_xml['calibration'].lower() == 'нет':
+                            calibrate = 'false'
+                            calibration = f'<gost:calibration>{calibrate}</gost:calibration>\n'
+                    else:
+                        raise ValueError("Не заполнено поле Результаты калибровки")
 
-                    valid = signCipher + vrfDate + validDate
+                    valid = signCipher + miOwner + vrfDate + validDate + typePov + calibration
 
-                    certNum = self.data_for_xml['certNum']   #Номер свидетельства на СИ
-
+                    #Знак поверки в паспорте
                     if self.data_for_xml['signPass'].lower() == 'да':
                         signPass = 'true'
                     else:
                         signPass = 'false'
 
+                    #Знак поверки на СИ
                     if self.data_for_xml['signMi'].lower() == 'да':
                         signMi = 'true'
                     else:
-                        signMi = 'false'                                #Знак поверки на СИ
-
+                        signMi = 'false'
 
                     applicable_start = f'<gost:applicable>\n'
-                    certNum = f'<gost:certNum>{certNum}</gost:certNum>\n'
+                    stickerNum = ''
+                    if self.data_for_xml['stickerNum'] != '':
+                        stickerNum = f'<gost:stickerNum>{self.data_for_xml["stickerNum"]}</gost:stickerNum>\n'
                     signPass = f'<gost:signPass>{signPass}</gost:signPass>\n'
                     signMi = f'<gost:signMi>{signMi}</gost:signMi>\n'
                     applicable_close = f'</gost:applicable>\n'
-                    verification_res = applicable_start + certNum + signPass + signMi + applicable_close
+                    verification_res = applicable_start + stickerNum + signPass + signMi + applicable_close
 
-                elif verification_marker.lower() == 'непригодно' or self.data_for_xml['noticeNum'] != '':
+                elif verification_marker.lower() == 'непригодно' or self.data_for_xml['reasons'] != '':
                     signCipher = f'<gost:signCipher>{signCipher_element}</gost:signCipher>\n'
-                    vrfDate = f'<gost:vrfDate>{vrfDate}+03:00</gost:vrfDate>\n'
+                    if self.data_for_xml["miOwner"] != '':
+                        miOwner = f'<gost:miOwner>{self.data_for_xml["miOwner"]}</gost:miOwner>\n'
+                    else:
+                        raise ValueError("Не заполнено поле Владелец СИ")
 
-                    valid = signCipher + vrfDate
+                    vrfDate = f'<gost:vrfDate>{vrfDate}</gost:vrfDate>\n'
+
+                    if self.data_for_xml["type"] != '':
+                        typePov = f'<gost:type>{self.data_for_xml["type"]}</gost:type>\n'
+                    else:
+                        raise ValueError("Не заполнено поле Тип поверки")
+                    if self.data_for_xml['calibration'] != '':
+                        if self.data_for_xml['calibration'].lower() == 'да':
+                            calibrate = 'true'
+                            calibration = f'<gost:calibration>{calibrate}</gost:calibration>\n'
+                        elif self.data_for_xml['calibration'].lower() == 'нет':
+                            calibrate = 'false'
+                            calibration = f'<gost:calibration>{calibrate}</gost:calibration>\n'
+                    else:
+                        raise ValueError("Не заполнено поле Результаты калибровки")
+
+                    valid = signCipher + miOwner + vrfDate + typePov + calibration
 
                     inapplicable_start = f'<gost:inapplicable>\n'
-                    noticeNum = f'<gost:noticeNum>{self.data_for_xml["noticeNum"]}</gost:noticeNum>\n' #Номер извещения о непригодности СИ
+                    if self.data_for_xml["reasons"] != '':
+                        reasons = f'<gost:noticeNum>{self.data_for_xml["reasons"]}</gost:noticeNum>\n' #Причина непригодности СИ
+                    else:
+                        raise ValueError("Не заполнено поле Причина непригодности")
+                    
                     inapplicable_close = f'</gost:inapplicable>\n'
-                    verification_res = inapplicable_start + noticeNum + inapplicable_close
+                    verification_res = inapplicable_start + reasons + inapplicable_close
 
-                docTitle = f'<gost:docTitle>{self.data_for_xml["docTitle"]}</gost:docTitle>\n'
+                if self.data_for_xml["docTitle"] != '':
+                    docTitle = f'<gost:docTitle>{self.data_for_xml["docTitle"]}</gost:docTitle>\n' #Причина непригодности СИ
+                else:
+                    raise ValueError("Не заполнено поле Методика поверки")
+
+                metrologist = ''
+                if self.data_for_xml['metrologist'] != '':
+                    metrologist = f'<gost:metrologist>{self.data_for_xml["metrologist"]}</gost:metrologist>\n'
 
                 means_start = f'<gost:means>\n'
 
@@ -292,8 +362,9 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                     npe_list = ''
                     npe_start = f'<gost:npe>\n'
                     for t in text:
-                        npe_number = f'<gost:number>{t}</gost:number>\n'
-                        npe_list += npe_number
+                        if t != '':
+                            npe_number = f'<gost:number>{t}</gost:number>\n'
+                            npe_list += npe_number
                     npe_close = f'</gost:npe>\n'
 
                     npe = npe_start + npe_list + npe_close
@@ -305,8 +376,9 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                     uve_list = ''
                     uve_start = f'<gost:uve>\n'
                     for t in text:
-                        uve_number = f'<gost:number>{t}</gost:number>\n'
-                        uve_list += uve_number
+                        if t != '':
+                            uve_number = f'<gost:number>{t}</gost:number>\n'
+                            uve_list += uve_number
                     uve_close = f'</gost:uve>\n'
 
                     uve = uve_start + uve_list + uve_close
@@ -346,8 +418,9 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                     mieta_list = ''
                     mieta_start = f'<gost:mieta>\n'
                     for t in text:
-                        mieta_number = f'<gost:number>{t}</gost:number>\n'
-                        mieta_list += mieta_number
+                        if t != '':
+                            mieta_number = f'<gost:number>{t}</gost:number>\n'
+                            mieta_list += mieta_number
                     mieta_close = f'</gost:mieta>\n'
 
                     mieta = mieta_start + mieta_list + mieta_close
@@ -379,31 +452,40 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
 
                 means_close = f'</gost:means>\n'
 
+                conditions_start = f'<gost:conditions>\n'
+                if self.data_for_xml["temperature"] != '':
+                    temperature = f'<gost:temperature>{self.data_for_xml["temperature"]}</gost:temperature>\n'
+                else:
+                    raise ValueError("Не заполнено поле Температура")
+                if self.data_for_xml["pressure"] != '':
+                    pressure = f'<gost:pressure>{self.data_for_xml["pressure"]}</gost:pressure>\n'
+                else:
+                    raise ValueError("Не заполнено поле Давление")
+                if self.data_for_xml["hymidity"] != '':
+                    hymidity = f'<gost:hymidity>{self.data_for_xml["hymidity"]}</gost:hymidity>\n'
+                else:
+                    raise ValueError("Не заполнено поле Влажность")
+
+                other = ''
+                if self.data_for_xml['other'] != '':
+                    other = f'<gost:other>{self.data_for_xml["other"]}</gost:other>\n'
+                conditions_close = f'</gost:conditions>\n'
+
+                structure = ''
+                if self.data_for_xml['structure'] != '':
+                    structure = f'<gost:structure>{self.data_for_xml["structure"]}</gost:structure>\n'
+
+                characteristics = ''
+                if self.data_for_xml['characteristics'] != '':
+                    characteristics = f'<gost:brief_procedure>\n<gost:characteristics>{self.data_for_xml["characteristics"]}</gost:characteristics>\n</gost:brief_procedure>\n'
+
                 additional_info = ''
-                ranges = ''
-                values = ''
-                channels = ''
-                blocks = ''
-
-                if {self.data_for_xml['additional_info']} != '':
+                if self.data_for_xml['additional_info'] != '':
                     additional_info = f'<gost:additional_info>{self.data_for_xml["additional_info"]}</gost:additional_info>\n'
-
-                if {self.data_for_xml['ranges']} != '':
-                    ranges = f'<gost:ranges>{self.data_for_xml["ranges"]}</gost:ranges>\n'
-
-                if {self.data_for_xml['values']} != '':
-                    values = f'<gost:values>{self.data_for_xml["values"]}</gost:values>\n'
-
-                if {self.data_for_xml['channels']} != '':
-                    channels = f'<gost:channels>{self.data_for_xml["channels"]}</gost:channels>\n'
-
-                if {self.data_for_xml['blocks']} != '':
-                    blocks = f'<gost:blocks>{self.data_for_xml["blocks"]}</gost:blocks>\n'
 
                 result_close = f'</gost:result>\n'
 
-
-                body = result_start + miInfo + valid + verification_res + docTitle + means_start + npe + uve + ses + mieta + mis + means_close + additional_info + ranges + values + channels + blocks + result_close
+                body = result_start + miInfo + valid + verification_res + docTitle + metrologist + means_start + npe + uve + ses + mieta + mis + means_close + conditions_start + temperature + pressure + hymidity + other + conditions_close + structure + characteristics + additional_info + result_close
                 sample_body.write(body)
 
                 csv_data.remove(csv_data[1])
@@ -411,9 +493,9 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                 self.data_for_xml.clear()
 
 
-            with open (FileFullPath, 'a', encoding='utf-8') as sample:
-                footer = f'</gost:application>\n'
-                sample.write(footer)
+        with open (FileFullPath, 'a', encoding='utf-8') as sample:
+            footer = f'</gost:application>\n'
+            sample.write(footer)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
