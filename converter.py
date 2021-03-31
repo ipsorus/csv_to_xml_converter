@@ -1,7 +1,7 @@
 # Владелец интеллектуальной собственности и разработчик данного программного обеспечения: Лошкарев Вадим Игоревич
 
 #Указатель версии ПО (для заставки и раздела Информация)
-version = "Версия программы: 2.0"
+version = "Версия программы: 2.1"
 
 import csv
 from datetime import datetime, date, time, timedelta
@@ -11,12 +11,31 @@ import errno
 import res_rc
 import sys
 
+import start_logo_conv  #модуль заставки
 import csv_to_xml  #модуль главного окна PyQt
 
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QDate, QDateTime, QTimer
 from PyQt5.QtWidgets import QMainWindow, QWidget, QFileDialog, QToolTip, QPushButton, QApplication, QMessageBox, QAction
 from PyQt5 import QtGui
 from PyQt5.QtGui import QColor, QPalette
+
+class Logo(QtWidgets.QWidget, start_logo_conv.Ui_Form):
+    def __init__(self, parent=None):
+        super(Logo, self).__init__(parent)
+
+        self.setupUi(self)
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+
+        #Указатель версии ПО (для заставки и раздела Информация)
+        self.label_2.setText(version)
+
+        self.show()
+        self.value = 0
+        while self.value <= 400000:
+            self.value += 1
+            QtWidgets.QApplication.processEvents()
+        self.close()
 
 class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
 
@@ -53,10 +72,9 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
         """
         Read a csv file
         """
-
         reader = csv.reader(file_obj)
         for row in reader:
-            row_1 = (" ".join(row))
+            row_1 = (' '.join(row))
             self.data.append(row_1.split(';'))
         return self.data
 
@@ -101,8 +119,6 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                     self.statusBar().showMessage('Ошибка, неверный формат данных в CSV')
                     error = 'True'
                 except ValueError as exp:
-                    text_1 = exp
-                    print('text_1', text_1)
                     self.statusBar().showMessage(str(exp))
                     error = 'True'
             elif TOTAL_RESULTS > RESULTS_IN_APP:
@@ -113,8 +129,6 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                     self.statusBar().showMessage('Ошибка, неверный формат данных в CSV')
                     error = 'True'
                 except ValueError as exp:
-                    text = exp
-                    print('text', text)
                     self.statusBar().showMessage(str(exp))
                     error = 'True'
 
@@ -268,7 +282,8 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
                 if verification_marker.lower() == 'пригодно':
                     signCipher = f'<gost:signCipher>{signCipher_element}</gost:signCipher>\n'
                     if self.data_for_xml["miOwner"] != '':
-                        miOwner = f'<gost:miOwner>{self.data_for_xml["miOwner"]}</gost:miOwner>\n'
+                        miOwner = f"<gost:miOwner>{self.data_for_xml['miOwner']}</gost:miOwner>\n"
+                        #print('miOwner', miOwner)
                     else:
                         raise ValueError("Не заполнено поле Владелец СИ")
                     vrfDate = f'<gost:vrfDate>{vrfDate}</gost:vrfDate>\n'
@@ -499,6 +514,8 @@ class main_window(QMainWindow, csv_to_xml.Ui_MainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setStyle('Fusion')
+    Logo()
     ex = main_window()
     ex.show()
     app.exec()

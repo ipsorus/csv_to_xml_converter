@@ -1,2 +1,3 @@
 pyuic5 csv_to_xml.ui -o csv_to_xml.py
 
+pyuic5 start_logo_conv.ui -o start_logo_conv.py

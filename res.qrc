@@ -1,6 +1,8 @@
 <RCC>
   <qresource prefix="icons">
-    <file>vniims_logo.jpg</file>
     <file>XML-01.ico</file>
+  </qresource>
+  <qresource prefix="logo">
+    <file>vniims_logo_2.jpg</file>
   </qresource>
 </RCC>
